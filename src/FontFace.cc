@@ -55,12 +55,12 @@ static cairo_user_data_key_t key;
 NAN_METHOD(FontFace::New) {
   NanScope();
 
-  if (!args[0]->IsString()
+  if (!(args[0]->IsString() || node::Buffer::HasInstance(args[0]))
     || !args[1]->IsNumber()) {
     return NanThrowError("Wrong argument types passed to FontFace constructor");
   }
 
-  String::Utf8Value filePath(args[0]);
+  //String::Utf8Value filePath(args[0]);
   int faceIdx = int(args[1]->NumberValue());
 
   FT_Face ftFace;
@@ -76,7 +76,14 @@ NAN_METHOD(FontFace::New) {
   }
 
   // Create new freetype font face.
-  ftError = FT_New_Face(library, *filePath, faceIdx, &ftFace);
+  if (args[0]->IsString()) {
+    String::Utf8Value filePath(args[0]);
+    ftError = FT_New_Face(library, *filePath, faceIdx, &ftFace);
+  } else {
+    char *fileBase   = node::Buffer::Data(args[0]);
+    size_t  fileSize       = node::Buffer::Length(args[0]);
+    ftError = FT_New_Memory_Face(library, (const FT_Byte*)fileBase, fileSize, faceIdx, &ftFace);
+  }
   if (ftError) {
     return NanThrowError("Could not load font file");
   }
