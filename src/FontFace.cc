@@ -19,6 +19,11 @@ FontFace::~FontFace() {
   // Once there is no reference left to crFace, cairo will release the
   // free type font face as well.
   cairo_font_face_destroy(_crFace);
+  for(int i = 0; i < _vec.size(); i++) {
+        free(_vec[i]);
+        _vec[i] = NULL;
+  }
+  _vec.clear();
 }
 
 /*
@@ -55,6 +60,8 @@ static cairo_user_data_key_t key;
 NAN_METHOD(FontFace::New) {
   NanScope();
 
+  void *data = NULL;
+
   if (!(args[0]->IsString() || node::Buffer::HasInstance(args[0]))
     || !args[1]->IsNumber()) {
     return NanThrowError("Wrong argument types passed to FontFace constructor");
@@ -81,10 +88,16 @@ NAN_METHOD(FontFace::New) {
     ftError = FT_New_Face(library, *filePath, faceIdx, &ftFace);
   } else {
     char *fileBase   = node::Buffer::Data(args[0]);
-    size_t  fileSize       = node::Buffer::Length(args[0]);
-    ftError = FT_New_Memory_Face(library, (const FT_Byte*)fileBase, fileSize, faceIdx, &ftFace);
+    size_t  fileSize = node::Buffer::Length(args[0]);
+    // TODO- use RAII to manage data
+    data = malloc(fileSize);
+    memcpy(data, fileBase, fileSize);
+    printf("FontFace:New Buffer, fileSize[%d]\n", fileSize);
+    ftError = FT_New_Memory_Face(library, (const FT_Byte*)data, fileSize, faceIdx, &ftFace);
   }
+
   if (ftError) {
+    free(data);
     return NanThrowError("Could not load font file");
   }
 
@@ -92,6 +105,7 @@ NAN_METHOD(FontFace::New) {
     // Load the font file in fontconfig
     FcBool ok = FcConfigAppFontAddFile(FcConfigGetCurrent(), (FcChar8 *)(*filePath));
     if (!ok) {
+      free(data);
       return NanThrowError("Could not load font in FontConfig");
     }
   #endif
@@ -105,6 +119,7 @@ NAN_METHOD(FontFace::New) {
   if (status) {
     cairo_font_face_destroy (crFace);
     FT_Done_Face (ftFace);
+    free(data);
     return NanThrowError("Failed to setup cairo font face user data");
   }
 
@@ -114,6 +129,9 @@ NAN_METHOD(FontFace::New) {
 
   FontFace *face = new FontFace(ftFace, crFace);
   face->Wrap(args.This());
+  if (data) {
+    face->_vec.push_back(data);
+  }
   NanReturnValue(args.This());
 }
 

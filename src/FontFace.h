@@ -12,6 +12,7 @@
 #include <ft2build.h>
 #include <cairo-ft.h>
 #include FT_FREETYPE_H
+#include <vector>
 
 class FontFace: public node::ObjectWrap {
   public:
@@ -27,6 +28,7 @@ class FontFace: public node::ObjectWrap {
     FT_Face   _ftFace;
     cairo_font_face_t *_crFace;
     static bool _initLibrary;
+    std::vector<void*> _vec;
 };
 
 #endif
