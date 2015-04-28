@@ -40,7 +40,7 @@
     },
     {
       'target_name': 'canvas',
-      'include_dirs': ["<!(node -e \"require('nan')\")"],
+      'include_dirs': ["<!(node -e \"require('nan')\")", "/usr/include"],
       'sources': [
         'src/Canvas.cc',
         'src/CanvasGradient.cc',
@@ -87,6 +87,7 @@
           }
         }, { # 'OS!="win"'
           'libraries': [
+            '-L /usr/lib64 ',
             '<!@(pkg-config pixman-1 --libs)',
             '<!@(pkg-config cairo --libs)',
             '<!@(pkg-config libpng --libs)'
