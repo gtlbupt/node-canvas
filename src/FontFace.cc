@@ -92,7 +92,7 @@ NAN_METHOD(FontFace::New) {
     // TODO- use RAII to manage data
     data = malloc(fileSize);
     memcpy(data, fileBase, fileSize);
-    printf("FontFace:New Buffer, fileSize[%d]\n", fileSize);
+    //printf("FontFace:New Buffer, fileSize[%d]\n", fileSize);
     ftError = FT_New_Memory_Face(library, (const FT_Byte*)data, fileSize, faceIdx, &ftFace);
   }
 
